@@ -3,6 +3,7 @@
 struct node
 {
     int data;
+    struct node *root;
     struct node *left;
     struct node *right;
 };
@@ -16,9 +17,11 @@ void insert(struct node **root)
     scanf("%d", &New_Node->data);
     New_Node->left = NULL;
     New_Node->right = NULL;
+    New_Node->root = NULL;
 label:
     if (*root == NULL)
     {
+        New_Node->root = *root;
         *root = New_Node;
         printf("Data insertion Successfull!!\n");
         return;
@@ -130,26 +133,26 @@ int search(struct node *root, char *ptr, int data, int *i)
     return 0;
 }
 // peekup element by address
-int peek(struct node *root, const char *ptr)
+struct node *peek(struct node *root, const char *ptr)
 {
     int x = 0;
     if (root == NULL)
     {
-        return 101;
+        return NULL;
     }
     if (ptr[0] != 'r')
     {
-        return 404;
+        return NULL;
     }
     x = 1;
-    
+
     while (ptr[x] != '\0')
     {
         if (ptr[x] == '1')
         {
             if (root->right == NULL)
             {
-                return 404;
+                return NULL;
             }
             root = root->right;
         }
@@ -157,59 +160,144 @@ int peek(struct node *root, const char *ptr)
         {
             if (root->left == NULL)
             {
-                return 404;
+                return NULL;
             }
             root = root->left;
         }
         else
         {
-            return 404;
+            return NULL;
         }
         x++;
     }
-    return root->data;
+    return root;
+}
+//smallest Node from left
+struct node* smallest(struct node *point)
+{
+   if(point->left==NULL)
+   {
+    return point;
+   }
+   return smallest(point->left);
+}
+// sub fun of Deleting
+int subdel(struct node **root,struct node *point)
+{
+    if (point->left == NULL && point->right == NULL)
+    {
+        if(point->root==NULL)
+        {
+        *root=NULL;
+        free(point);
+        return 1;
+        }
+        point->root=NULL;
+        free(point);
+        return 1;
+    }
+    else if (point->right == NULL)
+    {
+        if (point->root->data > point->left->data)
+        {
+            point->root->left = point->left;
+            free(point);
+            return 1;
+        }
+        else
+        {
+            point->root->right = point->left;
+            free(point);
+            return 1;
+        }
+    }
+    else if(point->left==NULL)
+    {
+        if(point->root->data<point->right->data)
+        {
+            point->root->right=point->right;
+            free(point);
+            return 1;
+        }
+        else 
+        {
+           point->root->left=point->right;
+            free(point);
+            return 1;
+        }
+    }
+    else
+    {
+        struct node *low=smallest(point);
+        low->right=point->right;
+        low->left=point->left;
+        low->root->left=NULL;
+        low->root=point->root;
+        free(point);
+        return 1;
+    }
+    
+    return 0;
+}
+// Deleting Node
+void del(struct node **root, const char *ptr)
+{
+    struct node *point;
+    point = peek(*root, ptr);
+    if (point == NULL)
+    {
+        printf("Please Check your Location For Deletion!!!\n");
+        return;
+    }
+    if (subdel(root,point))
+    {
+        printf("Node is deleted succesfully!!\n");
+        return;
+    }
+    printf("Error!!!\n");
+    return;
 }
 int main()
 {
-    int c;
+    char c;
     char Address[100];
     struct node *Root = NULL;
     printf("=============================================================\n");
     printf("What You Want To Do!!!\n");
     while (1)
     {
-        printf("1-Insert New Node\n2-Pre Order Traverse\n3-In Order Travers\n4-Post Order Travers\n5-search\n6-Peek Data\n7-exit::");
-        scanf("%d", &c);
+        printf("1-Insert New Node\n2-Pre Order Traverse\n3-In Order Travers\n4-Post Order Travers\n5-search\n6-Peek Data\n7-Delete Node\n8-exit::");
+        scanf("%s", &c);
         switch (c)
         {
-        case 1:
+        case '1':
         {
             insert(&Root);
             printf("\n");
             break;
         }
 
-        case 2:
+        case '2':
         {
             Pre_Order(Root);
             printf("\n");
             break;
         }
 
-        case 3:
+        case '3':
         {
             In_Order(Root);
             printf("\n");
             break;
         }
 
-        case 4:
+        case '4':
         {
             Post_Order(Root);
             printf("\n");
             break;
         }
-        case 5:
+        case '5':
         {
             int data, i = 0;
             printf("Enter the Data you Want To Search in BST::");
@@ -234,35 +322,42 @@ int main()
             }
             break;
         }
-        case 6:
+        case '6':
         {
             char add[100];
-            int data;
+            struct node *data;
             printf("Enter the Exact Address of Your Element::");
             scanf("%s", add);
             data = peek(Root, add);
-            if (data == 404)
+            if (data == NULL)
             {
                 printf("Data Not found please check your Laction!!\n");
             }
-            else if (data == 101)
-            {
-                printf("Tree is Empty!!!!\n");
-            }
+
             else
             {
-                printf("Your data is Found = %d\n", data);
+                printf("Your data is Found = %d\n", data->data);
             }
 
             break;
         }
-        case 7:
+        case '7':
+        {
+            char add[100];
+            printf("Enter the Exact Address of Your Element::");
+            scanf("%s", add);
+            del(&Root,add);
+            break;
+           
+        }
+        case '8':
         {
             goto label;
         }
         default:
         {
             printf("Invalid Entry Please try again!!!!\n");
+            break;
         }
         }
     }
