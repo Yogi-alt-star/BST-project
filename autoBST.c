@@ -18,23 +18,21 @@ void insert(struct node **root)
     New_Node->left = NULL;
     New_Node->right = NULL;
     New_Node->root = NULL;
-label:
-    if (*root == NULL)
+    struct node *parent = NULL;
+    while (*root != NULL)
     {
-        New_Node->root = *root;
-        *root = New_Node;
-        printf("Data insertion Successfull!!\n");
-        return;
+        parent = *root;
+        if (New_Node->data < (*root)->data)
+        {
+            root = &(*root)->left;
+        }
+        else
+        {
+            root = &(*root)->right;
+        }
     }
-    if (New_Node->data < (*root)->data)
-    {
-        root = &(*root)->left;
-    }
-    else
-    {
-        root = &(*root)->right;
-    }
-    goto label;
+    New_Node->root = parent;
+    *root = New_Node;
 }
 // travers Pre Order
 void Pre_Order(struct node *Root)
@@ -80,22 +78,13 @@ void Post_Order(struct node *Root)
     }
 }
 // Memory Free
-void Deallocating(struct node *root)
-{
-    if (root == NULL)
-    {
-        return;
-    }
-    if (root->left == NULL && root->right == NULL)
-    {
-        free(root);
-        root = NULL;
-        return;
-    }
-    Deallocating(root->left);
-    Deallocating(root->right);
-    free(root);
-    return;
+void Deallocating(struct node *root) 
+{ 
+    if (root == NULL) 
+    return; 
+    Deallocating(root->left); 
+    Deallocating(root->right); 
+    free(root); 
 }
 // search
 int search(struct node *root, char *ptr, int data, int *i)
@@ -172,71 +161,97 @@ struct node *peek(struct node *root, const char *ptr)
     }
     return root;
 }
-//smallest Node from left
-struct node* smallest(struct node *point)
+// smallest Node from left
+struct node *smallest(struct node *point)
 {
-   if(point->left==NULL)
-   {
-    return point;
-   }
-   return smallest(point->left);
+    if (point->left == NULL)
+    {
+        return point;
+    }
+    return smallest(point->left);
 }
 // sub fun of Deleting
-int subdel(struct node **root,struct node *point)
+int subdel(struct node **root, struct node *point)
 {
     if (point->left == NULL && point->right == NULL)
     {
-        if(point->root==NULL)
+        if (point == *root) // deleting Main root with no Leaf
         {
-        *root=NULL;
-        free(point);
-        return 1;
+            *root = NULL;
+            free(point);
+            return 1;
         }
-        point->root=NULL;
-        free(point);
-        return 1;
+        if (point->root->data > point->data) // deleting non-root node with  no leaf --left side
+        {
+            point->root->left = NULL;
+            free(point);
+            return 1;
+        }
+        else // deleting non-root node with  no leaf --Right side
+        {
+            point->root->right = NULL;
+            free(point);
+            return 1;
+        }
     }
-    else if (point->right == NULL)
+    else if (point->right == NULL) // deleting nodes having one leaf
     {
-        if (point->root->data > point->left->data)
+        if (point == *root) // deleting Main root with left leaf
+        {
+            *root = point->left;
+            (*root)->root = NULL;
+            free(point);
+            return 1;
+        }
+
+        if (point->root->data > point->left->data) //
         {
             point->root->left = point->left;
+            point->left->root=point->root;
             free(point);
             return 1;
         }
         else
         {
+
             point->root->right = point->left;
+            point->left->root = point->root;
             free(point);
             return 1;
         }
     }
-    else if(point->left==NULL)
+    else if (point->left == NULL)
     {
-        if(point->root->data<point->right->data)
+
+        if (point == *root) // deleting Main root with Right leaf
         {
-            point->root->right=point->right;
+            *root = point->right;
+            (*root)->root = NULL;
             free(point);
             return 1;
         }
-        else 
+        if (point->root->data < point->right->data)
         {
-           point->root->left=point->right;
+            point->root->right = point->right;
+            point->right->root = point->root;
+            free(point);
+            return 1;
+        }
+        else
+        {
+            point->root->left = point->right;
+            point->right->root = point->root;
             free(point);
             return 1;
         }
     }
     else
     {
-        struct node *low=smallest(point);
-        low->right=point->right;
-        low->left=point->left;
-        low->root->left=NULL;
-        low->root=point->root;
-        free(point);
-        return 1;
+        struct node *low = smallest(point->right);
+        point->data = low->data; 
+        return subdel(root, low);
     }
-    
+
     return 0;
 }
 // Deleting Node
@@ -249,7 +264,7 @@ void del(struct node **root, const char *ptr)
         printf("Please Check your Location For Deletion!!!\n");
         return;
     }
-    if (subdel(root,point))
+    if (subdel(root, point))
     {
         printf("Node is deleted succesfully!!\n");
         return;
@@ -267,7 +282,7 @@ int main()
     while (1)
     {
         printf("1-Insert New Node\n2-Pre Order Traverse\n3-In Order Travers\n4-Post Order Travers\n5-search\n6-Peek Data\n7-Delete Node\n8-exit::");
-        scanf("%s", &c);
+        scanf(" %c", &c);
         switch (c)
         {
         case '1':
@@ -346,9 +361,8 @@ int main()
             char add[100];
             printf("Enter the Exact Address of Your Element::");
             scanf("%s", add);
-            del(&Root,add);
+            del(&Root, add);
             break;
-           
         }
         case '8':
         {
